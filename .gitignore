@@ -1,0 +1,39 @@
+# 本仓库不含任何密钥；这里只写路径与依赖
+__pycache__/
+*.pyc
+.venv/
+venv/
+node_modules/
+
+# 用户自己的配置（可能含 key）
+config.json
+config.yaml
+config.local.*
+.env
+.env.*
+!.env.example
+
+# 输出
+output/
+out/
+renders/
+*.mp4
+*.wav
+*.png
+*.jpg
+
+# 模型文件（体积太大，README 里写去哪下）
+*.safetensors
+*.gguf
+*.ckpt
+*.pt
+*.pth
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+_fit_*.wav
+*_color.mp4
