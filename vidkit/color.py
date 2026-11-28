@@ -38,9 +38,14 @@ def run(path, out_path=None, fps=None, only_lum=False, strength=1.0, verbose=Tru
     import tempfile
     import glob
     tmp = tempfile.mkdtemp(prefix="vidkit_color_")
+    # ⚠️ 不要用 fps= 滤镜：它会向下取整帧数（实测 744 帧 → 734 帧，少 0.42 秒，
+    #    尾段被切）。默认逐帧全抽，回写时用同一个帧率，片长才不变。
+    vf = []
+    if fps:
+        vf = ["-vf", "fps=%s" % fps]
     n = subprocess.run(
-        [FFMPEG, "-y", "-v", "error", "-i", path, "-vf", "fps=%s" % (fps or info["fps"]),
-         "-start_number", "0", os.path.join(tmp, "f%05d.png")],
+        [FFMPEG, "-y", "-v", "error", "-i", path] + vf +
+        ["-start_number", "0", os.path.join(tmp, "f%05d.png")],
         capture_output=True)
     if n.returncode != 0:
         raise RuntimeError("抽帧失败：" + n.stderr.decode("utf-8", "replace")[:300])
@@ -74,7 +79,9 @@ def run(path, out_path=None, fps=None, only_lum=False, strength=1.0, verbose=Tru
         [FFMPEG, "-y", "-v", "error", "-framerate", str(fps or info["fps"]),
          "-i", os.path.join(tmp, "f%05d.png"), "-i", path,
          "-map", "0:v:0", "-map", "1:a:0?", "-c:v", "libx264", "-crf", "18",
-         "-pix_fmt", "yuv420p", "-c:a", "copy", "-shortest", out_path],
+         "-pix_fmt", "yuv420p", "-c:a", "copy", out_path],
+        # ⚠️ 不要 -shortest：源的视频常比音轨略长（实测 31.000s vs 30.728s），
+        #    -shortest 会把视频截到音轨长度（744 帧 → 734 帧），尾段被吃掉。
         capture_output=True)
     if r.returncode != 0:
         raise RuntimeError("回写失败：" + r.stderr.decode("utf-8", "replace")[:300])
